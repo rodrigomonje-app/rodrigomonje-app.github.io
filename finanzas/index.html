@@ -1,0 +1,59 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mis Finanzas tiene nueva dirección</title>
+<style>
+:root{--bg:#F4F5F7;--ink:#15181C;--muted:#5B6570;--line:#D9DDE2;--card:#fff;--acc:#15181C;--on:#fff;--ok:#2C8552}
+@media (prefers-color-scheme:dark){:root{--bg:#101215;--ink:#E8EBEF;--muted:#949CA6;--line:#2A3038;--card:#171A1F;--acc:#E8EBEF;--on:#101215;--ok:#45B074}}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:520px;margin:0 auto;padding:28px 16px 48px;display:flex;flex-direction:column;gap:14px}
+h1{font-size:1.6rem;line-height:1.15;margin:0}
+p{margin:0;color:var(--muted)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:12px}
+button,a.b{display:block;text-align:center;border:1px solid var(--line);background:transparent;color:var(--ink);border-radius:12px;padding:13px 14px;font:inherit;font-weight:600;text-decoration:none;cursor:pointer}
+button.pri{background:var(--acc);color:var(--on);border-color:var(--acc)}
+#st{font-weight:600;color:var(--ink)}#st.ok{color:var(--ok)}
+ol{margin:0;padding-left:1.2em;color:var(--muted)}
+</style></head><body><main>
+<h1>Mis Finanzas tiene nueva dirección</h1>
+<p>La app ahora se instala en tu teléfono con su propio ícono, funciona sin internet y puede respaldar tus datos en tu Google Drive.</p>
+<div class="card">
+ <p id="st">Revisando los datos guardados en este teléfono…</p>
+ <button class="pri" id="go" hidden>Llevar mis datos a la app nueva</button>
+ <a class="b" id="open" href="https://misfinanzas-cl.netlify.app/" target="_blank" rel="noopener">Abrir la app nueva</a>
+ <button id="dl" hidden>Descargar mis datos (respaldo)</button>
+</div>
+<div class="card"><p><b style="color:var(--ink)">Después:</b></p>
+ <ol><li>En la app nueva, toca <b>Instalar</b> (o menú ⋮ › Instalar app).</li><li>Borra de tu pantalla el acceso directo antiguo.</li></ol></div>
+<p style="font-size:.85rem">Nueva dirección: <a href="https://misfinanzas-cl.netlify.app/" target="_blank" rel="noopener" style="color:inherit">https://misfinanzas-cl.netlify.app/</a></p>
+</main>
+<script>
+(function(){
+ var NEW='https://misfinanzas-cl.netlify.app/',ORIGIN=new URL(NEW).origin,APP='finanzas';
+ var $=function(id){return document.getElementById(id)};
+ function get(k,d){try{var v=JSON.parse(localStorage.getItem(k));return v==null?d:v}catch(e){return d}}
+ var data=null,n=0;
+ if(APP==='fierros'){var v2=get('fierros-v2',null);if(v2&&v2.sessions){data={v2:v2,photos:get('fierros-photos',{}),theme:localStorage.getItem('fierros-theme')};n=Object.keys(v2.sessions).length}}
+ else{var movs=get('fin-movs',null);if(movs&&movs.length){data={movs:movs,pres:get('fin-pres',{})};n=movs.length}}
+ if(!data){$('st').textContent='No hay datos guardados aquí. Solo abre la app nueva.';return}
+ $('st').textContent='En este teléfono hay '+n+(APP==='fierros'?' día(s) de entrenamiento':' movimiento(s)')+' guardados.';
+ $('go').hidden=false;$('dl').hidden=false;
+ var w=null,sent=false;
+ window.addEventListener('message',function(e){
+  if(e.origin!==ORIGIN||!e.data)return;
+  if(e.data.t==='migrar-listo'&&e.data.app===APP&&!sent){sent=true;e.source.postMessage({t:'migrar-datos',app:APP,data:data},ORIGIN)}
+  if(e.data.t==='migrar-ok'){$('st').className=e.data.ok?'ok':'';$('st').textContent=e.data.ok?'¡Listo! Tus datos ya están en la app nueva. Puedes cerrar esta página.':'No se pudieron traspasar. Usa “Descargar mis datos” y restáuralos en la app nueva.'}
+ });
+ $('go').onclick=function(){
+  sent=false;w=window.open(NEW+'#migrar','_blank');
+  if(!w){$('st').textContent='El navegador bloqueó la ventana. Usa “Descargar mis datos” y luego “Restaurar respaldo” en la app nueva.';return}
+  $('st').textContent='Abriendo la app nueva y traspasando tus datos…';
+  setTimeout(function(){if(!sent)$('st').textContent='Si no se traspasaron, usa “Descargar mis datos” y luego “Restaurar respaldo” en la app nueva.'},12000);
+ };
+ $('dl').onclick=function(){
+  var d=new Date(),day=d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2),o,name;
+  if(APP==='fierros'){o={format:'fierros-respaldo',v:2,date:day,app:data.v2.app||{},sessions:data.v2.sessions,photos:data.photos};name='fierros-respaldo-'+day+'.json'}
+  else{o={format:'misfinanzas-respaldo',v:2,fecha:day,movs:data.movs,budgets:data.pres,recs:[]};name='Mis_Finanzas_respaldo_'+day+'.json'}
+  var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(o)],{type:'application/json'}));a.download=name;document.body.appendChild(a);a.click();
+  $('st').textContent='Archivo descargado. En la app nueva: Ajustes › Restaurar respaldo.';
+ };
+})();
+</script></body></html>
